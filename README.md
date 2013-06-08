@@ -37,9 +37,85 @@ Using the default profile...
 Great we now have `Cucumber` wired up correctly.
 
 ##Phase 2: Adding Capyabra
-Capybara is a great tool that gives a nice DSL for interacting with DOM elements i.e finding, selecting, clicking, filling in form...you know, all things your users are going to be doing.  Luckily for us, the `cucumber-rails` gem that we installed already has `capybara` built in.
+Capybara is a great tool that gives a nice DSL for interacting with DOM elements i.e finding, selecting, clicking, filling in form...you know, all things your users are going to be doing.  Luckily for us, the `cucumber-rails` gem that we installed already has `capybara` built in.  First, let's get some configuration at of the way.
 
-Inside of the `features` directory make a new directory called `tests`.  Inside of that directory create a new `.feature` file called `smoketest.feature`.
+Open the `env.rb` file inside of `support` directory.  Add the following to the top of the file.
+
+```
+require 'cucumber/rails'
+
+Capybara.run_server = false
+Capybara.register_driver(:selenium){ |app| Capybara::Selenium::Driver.new(app, { :browser => :chrome }) }
+Capybara.default_driver = :selenium
+
+```
+The `Capybara.run_server = false` method tells Capybara that we are running aginst a remote server.
+The next 2 lines tell Capybara that we want to use the `Selenium Webdriver` and we want it to run `Chrome` as opposed to the default `firefox` (just my own personal preference)
+
+Now, let's create a more robust smoketest.  Inside of the `features` directory make a new directory called `tests`.  Inside of that directory create a new `.feature` file called `smoketest.feature`.
+
+Add this to it:
+```
+Feature: Testing different webpages
+  Scenario: Around the world
+    Given I am checking out many pages
+```
+
+Now run `cucumber` from the command line and it should generate the following:
+
+```
+Using the default profile...
+Feature: Testing different webpages
+
+  Scenario: Around the world           # features/test/external.feature:3
+    Given I am checking out many pages # features/test/external.feature:4
+      Undefined step: "I am checking out many pages" (Cucumber::Undefined)
+      features/test/external.feature:4:in `Given I am checking out many pages'
+
+1 scenario (1 undefined)
+1 step (1 undefined)
+0m0.358s
+
+You can implement step definitions for undefined steps with these snippets:
+
+Given(/^I am checking out many pages$/) do
+  pending # express the regexp above with the code you wish you had
+end
+```
+
+Great, Cucumber is giving us the necessary `step definition` to complete this test.  So, let's create a new `.rb` file inside of the `step_definitions` directory called `smoketest.rb`.  Inside of that file, add the following:
+
+```
+Given(/^I am checking out many pages$/) do
+  g = "https://www.google.com"
+  l = "https://www.livingsocial.com"
+  t = "https://www.tumblr.com"
+  [g,l,t].each do |site|
+    visit site
+    sleep 2
+  end
+end
+```
+
+Capybara gives us the method `visit` and all we do is pass it url.  Now, we should be able to run `cucumber` and see the following:
+
+```
+Using the default profile...
+Feature: Testing different webpages
+
+  Scenario: Around the world           # features/test/external.feature:3
+    Given I am checking out many pages # features/step_definitions/smoketest.rb:1
+
+1 scenario (1 passed)
+1 step (1 passed)
+0m12.931s
+```
+
+Great we now have capybara wired up.
+
+
+
+
 
 
 
