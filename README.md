@@ -330,6 +330,23 @@ Enjoy!
 
 ##Additonal Notes
 
+If you want to just run all of your tests against SauceLabs all the time change your `env.rb` file to look like this:
+```
+require 'cucumber/rails'
+require "sauce/cucumber"
+
+Capybara.run_server = false
+Capybara.default_driver = :sauce
+Capybara.server_port = 80
+
+Sauce.config do |c|
+  c[:browsers] = [['Mac', 'Chrome', '']]
+  c[:start_tunnel] = true
+end
+```
+
+If you're using SauceConnect heavily, you'll want to make it so that you always have the tunnel running.  In our current implementation, the tunnel will get spun up and torn down between each test run.  This is *very* taxing as the tunnel takes between 10-20 seconds to spin up and 5-10 to close.  A better solution is to keep the tunnel running constantly in another thread.  The easiest way to achieve that is to download the sauce-connect.jar file, add it into your app directory and then run it in another console tab.  SauceLabs has put together an easy tutorial on how to downlaod and run [here](https://saucelabs.com/docs/connect "sauce-connect")
+
 
 
 
