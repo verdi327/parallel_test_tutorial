@@ -351,7 +351,7 @@ end
 
 If you're using SauceConnect heavily, you'll want to make it so that you always have the tunnel running.  In our current implementation, the tunnel will get spun up and torn down between each test run.  This is *very* taxing as the tunnel takes between 10-20 seconds to spin up and 5-10 to close.  A better solution is to keep the tunnel running constantly in another thread.
 
-**Manually*
+**Manually**
 
 The easiest way to achieve that is to download the sauce-connect.jar file, add it into your app directory and then run it in another console tab.  SauceLabs has put together an easy tutorial on how to downlaod and run [here](https://saucelabs.com/docs/connect "sauce-connect")
 
@@ -482,7 +482,7 @@ class SauceConnect
 end
 ```
 
-This is a lot of code.  But, what it gives us access to 5 class methods.
+This is a lot of code.  But, it gives us access to 5 class methods.
 ```
 SauceConnect.download
 SauceConnect.extract
