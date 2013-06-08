@@ -284,6 +284,53 @@ Great, now when we run `rake sauce:cucumber` our tests will run in 6 differnt br
 
 ##Phase 6: Running Against Localhost
 
+We have parallelized our test, but our test is pretty lame.  It's an external process that just visits a few webpages.  When we're developing, we want to be able to test against our local environment.  Our current setup won't allow for that.  Luckily SauceLabs has again already done the hard work for us.  The have created `SauceConnect` which creates a tunnel between our local test environment and the VMs that are running our tests.
+
+To get going, install the necessary gems
+
+```
+gem sauce-connect
+```
+Bundle
+
+Add some more config to our `env.rb` file
+```
+Capybara.server_port = 80
+
+And this inside our Sauce.config block
+  c[:start_tunnel] = false
+```
+
+Our final `env.rb` file should look like this:
+```
+require 'cucumber/rails'
+require "sauce/cucumber"
+
+
+Capybara.run_server = false
+Capybara.register_driver(:selenium){ |app| Capybara::Selenium::Driver.new(app, { :browser => :chrome }) }
+Capybara.default_driver = :selenium
+Capybara.javascript_driver = :sauce
+Capybara.server_port = 80
+
+Sauce.config do |c|
+  c[:browsers] = [['Mac', 'Chrome', '']]
+  c[:start_tunnel] = true
+end
+```
+
+**Breakdown**
+* `Capybara.server_port` is needed because Capybara runs its server on a random port, whereas SauceConnect is expecting a port from a specific range.  Port 80 is from that range.
+* `c[:start_tunnel] = true` Tells sauce that it should spin up the SauceConnect tunnel before the test is run.
+
+Time to write a test.  At this point I can give you a sample because each of our dev env's will be different.  But, you should create a new `.feature` file within the `features/test` directory.  A quick smoketest could to hit your landing page and click on some button, like `login`.  Remember to tag the test with `@selenium` so that sauce will pick it up.
+
+Awesome Sauce - should be good running against your dev env on sauce labs in 6 different browsers in parallel.
+Enjoy!
+
+##Additonal Notes
+
+
 
 
 
