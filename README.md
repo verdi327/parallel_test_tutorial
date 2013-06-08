@@ -113,6 +113,71 @@ Feature: Testing different webpages
 
 Great we now have capybara wired up.
 
+##Phase 3: Running on SauceLabs
+
+We now want to be able to run our test on SauceLabs using their OnDemand platform.  First, let's add some more gems.
+```
+gem "sauce-cucumber", :require => false
+gem "sauce-connect"
+```
+Bundle - And yes the `:require => false` is necessary!
+
+Now let's get some more config out of the way. Inside of the `env.rb` file add the following:
+```
+require "sauce/cucumber"
+Capybara.javascript_driver = :sauce
+
+Sauce.config do |c|
+  c[:browsers] = [['Mac', 'Chrome', '']]
+end
+```
+
+So, as of now, your `env.rb` file should look like the following:
+```
+require 'cucumber/rails'
+require "sauce/cucumber"
+
+
+Capybara.run_server = false
+Capybara.register_driver(:selenium){ |app| Capybara::Selenium::Driver.new(app, { :browser => :chrome }) }
+Capybara.default_driver = :selenium
+Capybara.javascript_driver = :sauce
+
+Sauce.config do |c|
+  c[:browsers] = [['Mac', 'Chrome', '']]
+end
+```
+**Let's break this down**
+
+* Because of file loading issues, you need to require `sauce/cucumber` after `cucumber/rails`.
+* `Capybara.javascript_driver = :sauce` tells Capybara that any tests that need to be run with `javascript` should be handled by sauce.  What sauce has done is any test tagged with `@selenium` will be run automatically on the Sauce OnDemand platform.
+* The `Sauce.config` block tells sauce what platform(Mac), what browser(Chrome), and what browser version(chrome doesn't have versions so you just put an empty string.  And yes, it has to be in an array of arrays!
+
+We now need to add our creditentials so SauceLabs knows who we are.  Inside of our `config` directory create a new `.yml` file called `ondemand.yml`.  The sauce gem is looking for this file.  Add the following:
+
+```
+access_key: YOUR_ACCESS_KEY_HERE  
+username: YOUR_USERNAME_HERE
+```
+
+Now, we need to go to the top of our `smoketest.feature` file and add the `@selenium` tag so we can indicate what tests we want run on Sauce OnDemand.  You file should look like this:
+
+```
+@selenium
+Feature: Testing different webpages
+
+  Scenario: Around the world
+    Given I am checking out many pages
+```
+
+Now, run `cucumber` from you command line and you should be running the test on SauceLabs.
+
+##Phase 4: Parallelize the Tests
+
+
+
+
+
 
 
 
