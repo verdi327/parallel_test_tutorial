@@ -118,11 +118,10 @@ Great we now have capybara wired up.
 We now want to be able to run our test on SauceLabs using their OnDemand platform.  First, let's add some more gems.
 ```
 gem "sauce-cucumber", :require => false
-gem "sauce-connect"
 ```
 Bundle - And yes the `:require => false` is necessary!
 
-Now let's get some more config out of the way. Inside of the `env.rb` file add the following:
+Now let's get some config out of the way. Inside of the `env.rb` file add the following:
 ```
 require "sauce/cucumber"
 Capybara.javascript_driver = :sauce
@@ -172,7 +171,76 @@ Feature: Testing different webpages
 
 Now, run `cucumber` from you command line and you should be running the test on SauceLabs.
 
-##Phase 4: Parallelize the Tests
+##Phase 4: Parallelize the Test (part 1)
+
+Time for the fun part.  Before we code it, let's take a step back and outline the design we will be using to achieve parallelization.  Every time we run `cucumber` it loads the `env.rb` file and then runs all the tests we tell it to run.  Our `env.rb` file contains the os, browser, and brower version we want sauce to run.  So, we'll create our own rake task that will loop thru all of the os/browser/version configs we want, set that inside of the `env.rb` file and then run the process in background.  Essentailly, each config we have represents its own thread.  To accomplish this, we'll use `Thor` to dynamically change our `env.rb` file for us.
+
+Add the necessary gems
+```
+gem thor
+```
+Bundle
+
+**One thought**
+
+One approach using `thor` would be to create multiple `env.rb` files where each contains the setup that we want.  Inside of our rake task we would just copy the file over and set it as our `env.rb` file.  However, this feels too bloated for me.  As a project grows you can have anywhere from 10-20 different configs which only have a few lines changed in each file - non very DRY.  In addition, you have to do some hackery by appending non `.rb` file extensions so that `cucumber` doesn't load them at runtime (if you place them within the `features` directory).
+
+**A Better Solution**
+
+A better approach is to just have one `env.rb` file where you only change what needs to be changes.  In our case it's this line:
+```
+Sauce.config do |c|
+  c[:browsers] = [['Mac', 'Chrome', '']] #=> only this line needs to change
+end
+```
+
+`Thor` has a method called `gsub_file` which allow us to find and replace within a file.  The method signature is below:
+```
+gsub_file(path, flag, *args, &block)
+
+path:  path of the file to be changed
+flag:	the regexp or string to be replaced
+replacement:	the replacement, can be also given as a block
+config:	give :verbose => false to not log the status.
+```
+
+So, inside of our `lib/tasks` directory let's create a new file called `set.thor`.  Add the following:
+```
+class Set < Thor
+  include Thor::Actions
+
+  desc "browser", "sets the proper browser/platform config into cucumber's env.rb for sauce labs"
+  method_option :values, :type => :hash
+  def browser
+    gsub_file("features/support/env.rb", /c\[:browsers\] = \[\[[^\]]*\]\]/,"c[:browsers] = [['#{options[:values]["platform"]}', '#{options[:values]["browser"]}', '#{options[:values]["version"]}']]")
+  end
+end
+```
+
+**Breakdown**
+* `include Thor::Actions` is the Thor module that gives us access to the gsub_file method
+* `desc` same as `rake` just describes what the action does
+* `method_option` denotes how we are going to pass arguments from the command line into our method
+* Then we simply pass it the file, what to look for, and then what to add.
+
+Now, we should be able to run the following from the command line:
+```
+thor set:browser --values=platform:"Mac" browser:"Firefox" version:"21"
+
+```
+
+And see this output `gsub  features/support/env.rb`
+
+Now if we look at our `env.rb` file, the `Sauce.config` block should have changed to the following:
+```
+Sauce.config do |c|
+  c[:browsers] = [['Mac', 'Firefox', '21']]
+end
+```
+
+Awesome, we now have a way to dynamically change our `env.rb` file.
+
+##Phase 5: Parallelize the Test (part 2)
 
 
 
