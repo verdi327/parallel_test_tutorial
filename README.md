@@ -242,6 +242,52 @@ Awesome, we now have a way to dynamically change our `env.rb` file.
 
 ##Phase 5: Parallelize the Test (part 2)
 
+We now need to create a file that contains all our browser configs.  Inside of the `support` directory create a new `.yml` file called `sauce_browsers.yml`.  Add the following to it:
+
+```
+list:
+  - ["Windows XP","Internet Explorer","7"]
+  - ["Windows 7","Internet Explorer","8"]
+  - ["Windows 7","Internet Explorer","9"]
+  - ["Mac", "Firefox", "21"]
+  - ["Mac", "Safari", "5"]
+  - ["Mac", "Chrome", ""]
+```
+
+*These are the configs I am interested in running, yours maybe different*
+
+Now we need to create a new rake tests that will kick this party off!  Inside of `lib/taks` directory create a new `.rake` task called `sauce.rake`.  Add the following:
+
+```
+namespace :sauce do
+  desc "Runs cucumber suite on Sauce OnDemand cross-browser"
+  task :cucumber do
+    browsers = YAML.load_file(File.join("config", "sauce_browsers.yml"))
+    browsers['list'].each do |browser|  
+      system("thor set:browser --values=platform:'#{browser[0]}' browser:'#{browser[1]}' version:'#{browser[2]}'")
+      pid = fork { exec("cucumber") }
+      Process.detach(pid)
+      sleep 2
+    end
+  end
+end
+```
+
+**Breakdown**
+* First we namespace the task so that we can ultimately run `rake sauce:cucumber`
+* Create an array of browser configs by loading the `sauce_browsers.yml` file
+* Loop thru each browser, call our `thor set:browser` task and pass it the necessary args.
+* Call `fork { exec("cucumber") }` which spins up a new thread and then `Process.detach` which makes the thread asynch so we don't have to wait for it to complete before yielding control back to our current process.
+
+
+Great, now when we run `rake sauce:cucumber` our tests will run in 6 differnt browsers on SauceLabs.
+
+##Phase 6: Running Against Localhost
+
+
+
+
+
 
 
 
