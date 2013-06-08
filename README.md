@@ -37,7 +37,7 @@ Using the default profile...
 Great we now have `Cucumber` wired up correctly.
 
 ##Phase 2: Adding Capyabra
-Capybara is a great tool that gives a nice DSL for interacting with DOM elements i.e finding, selecting, clicking, filling in form...you know, all things your users are going to be doing.  Luckily for us, the `cucumber-rails` gem that we installed already has `capybara` built in.  First, let's get some configuration at of the way.
+Capybara is a great tool that gives us a nice DSL for interacting with DOM elements i.e finding, selecting, clicking, and filling in forms...you know, all things your users are going to be doing.  Luckily for us, the `cucumber-rails` gem that we installed already has `Capybara` built in.  First, let's get some configuration out of the way.
 
 Open the `env.rb` file inside of `support` directory.  Add the following to the top of the file.
 
@@ -97,7 +97,7 @@ Given(/^I am checking out many pages$/) do
 end
 ```
 
-Capybara gives us the method `visit` and all we do is pass it url.  Now, we should be able to run `cucumber` and see the following:
+Capybara gives us the method `visit` and all we do is pass it a url.  Now, we should be able to run `cucumber` and see the following:
 
 ```
 Using the default profile...
@@ -115,7 +115,7 @@ Great we now have capybara wired up.
 
 ##Phase 3: Running on SauceLabs
 
-We now want to be able to run our test on SauceLabs using their OnDemand platform.  First, let's add some more gems.
+We now want to be able to run our test on SauceLabs using their OnDemand platform.  First, let's add another gem.
 ```
 gem "sauce-cucumber", :require => false
 ```
@@ -183,7 +183,7 @@ Bundle
 
 **One thought**
 
-One approach using `thor` would be to create multiple `env.rb` files where each contains the setup that we want.  Inside of our rake task we would just copy the file over and set it as our `env.rb` file.  However, this feels too bloated for me.  As a project grows you can have anywhere from 10-20 different configs which only have a few lines changed in each file - non very DRY.  In addition, you have to do some hackery by appending non `.rb` file extensions so that `cucumber` doesn't load them at runtime (if you place them within the `features` directory).
+One approach using `thor` would be to create multiple `env.rb` files where each contains its own `env.rb` file that we want.  Inside of our rake task we would just copy the file over and set it as our `env.rb` file.  However, this feels too bloated for me.  As a project grows you can have anywhere from 10-20 different configs which only have a few lines changed in each file - non very DRY.  In addition, you have to do some hackery by appending non `.rb` file extensions so that `cucumber` doesn't load them at runtime (if you place them within the `features` directory).
 
 **A Better Solution**
 
@@ -219,9 +219,9 @@ end
 
 **Breakdown**
 * `include Thor::Actions` is the Thor module that gives us access to the gsub_file method
-* `desc` same as `rake` just describes what the action does
+* `desc` same as `rake's desc` just describes what the action does
 * `method_option` denotes how we are going to pass arguments from the command line into our method
-* Then we simply pass it the file, what to look for, and then what to add.
+* Then we simply pass it the file, what to look for, and what to add.
 
 Now, we should be able to run the following from the command line:
 ```
@@ -256,7 +256,7 @@ list:
 
 *These are the configs I am interested in running, yours maybe different*
 
-Now we need to create a new rake tests that will kick this party off!  Inside of `lib/taks` directory create a new `.rake` task called `sauce.rake`.  Add the following:
+Now we need to create a new rake task that will kick this party off!  Inside of `lib/taks` directory create a new `.rake` task called `sauce.rake`.  Add the following:
 
 ```
 namespace :sauce do
@@ -284,7 +284,7 @@ Great, now when we run `rake sauce:cucumber` our tests will run in 6 differnt br
 
 ##Phase 6: Running Against Localhost
 
-We have parallelized our test, but our test is pretty lame.  It's an external process that just visits a few webpages.  When we're developing, we want to be able to test against our local environment.  Our current setup won't allow for that.  Luckily SauceLabs has again already done the hard work for us.  The have created `SauceConnect` which creates a tunnel between our local test environment and the VMs that are running our tests.
+We have parallelized our test, but our one test is pretty lame.  It's an external process that just visits a few webpages.  When we're developing, we want to be able to test against our local environment.  Our current setup won't allow for that.  Luckily SauceLabs has again already done the hard work for us.  The have created `SauceConnect` which creates a tunnel between our local test environment and the VMs that are running our tests.
 
 To get going, install the necessary gems
 
@@ -323,10 +323,10 @@ end
 * `Capybara.server_port` is needed because Capybara runs its server on a random port, whereas SauceConnect is expecting a port from a specific range.  Port 80 is from that range.
 * `c[:start_tunnel] = true` Tells sauce that it should spin up the SauceConnect tunnel before the test is run.
 
-Time to write a test.  At this point I can give you a sample because each of our dev env's will be different.  But, you should create a new `.feature` file within the `features/test` directory.  A quick smoketest could to hit your landing page and click on some button, like `login`.  Remember to tag the test with `@selenium` so that sauce will pick it up.
+Time to write a test.  At this point I cannot give you a sample because each of our dev env's will be different.  But, you should create a new `.feature` file within the `features/test` directory.  A quick smoketest could be to hit your landing page and click on some button, like `login`.  Remember to tag the test with `@selenium` so that sauce will pick it up.
 
-Awesome Sauce - should be good running against your dev env on sauce labs in 6 different browsers in parallel.
-Enjoy!
+Awesome Sauce - you should now be running against your dev env on sauce labs in 6 different browsers in parallel.
+Woot Woot! Cut me another piece of parallel pie please.
 
 ##Additonal Notes
 
@@ -353,7 +353,7 @@ If you're using SauceConnect heavily, you'll want to make it so that you always 
 
 **Manually**
 
-The easiest way to achieve that is to download the sauce-connect.jar file, add it into your app directory and then run it in another console tab.  SauceLabs has put together an easy tutorial on how to downlaod and run [here](https://saucelabs.com/docs/connect "sauce-connect")
+The easiest way to achieve that is to download the sauce-connect.jar file, add it into your app directory and then run it in another command line tab.  SauceLabs has put together an easy tutorial on how to downlaod and run [here](https://saucelabs.com/docs/connect "sauce-connect")
 
 **Progammatically**
 
@@ -494,7 +494,7 @@ SauceConnect.end
 * `Start` will start the tunnel in its own process so you don't need to open a second tab on the command line
 * `End` will find the process's pid and kill it (SIGTERM)
 
-Now we can wrap this functionality into their own `rake` tasks.  Add the following to your `sauce.rake` file.
+Now we can wrap each of these methods into its own `rake` task.  Add the following to your `sauce.rake` file.
 
 ```
   desc "Installs (overwriting) the necessary Sauce Connect Library"
@@ -517,7 +517,7 @@ Now we can wrap this functionality into their own `rake` tasks.  Add the followi
     SauceConnect.end
   end
 ```
-
+We can now call `rake sauce:install`, `rake sauce:open_tunnel`, `rake sauce:close_tunnel`
 Woot Woot! We now have 3 helpful `rake` tasks for dealing with SauceConnect Tunnel.
 
 
