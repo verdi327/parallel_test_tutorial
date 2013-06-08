@@ -330,6 +330,8 @@ Enjoy!
 
 ##Additonal Notes
 
+**Run Sauce by Default**
+
 If you want to just run all of your tests against SauceLabs all the time change your `env.rb` file to look like this:
 ```
 require 'cucumber/rails'
@@ -345,7 +347,180 @@ Sauce.config do |c|
 end
 ```
 
-If you're using SauceConnect heavily, you'll want to make it so that you always have the tunnel running.  In our current implementation, the tunnel will get spun up and torn down between each test run.  This is *very* taxing as the tunnel takes between 10-20 seconds to spin up and 5-10 to close.  A better solution is to keep the tunnel running constantly in another thread.  The easiest way to achieve that is to download the sauce-connect.jar file, add it into your app directory and then run it in another console tab.  SauceLabs has put together an easy tutorial on how to downlaod and run [here](https://saucelabs.com/docs/connect "sauce-connect")
+**Long Running Sauce-Connect Tunnel**
+
+If you're using SauceConnect heavily, you'll want to make it so that you always have the tunnel running.  In our current implementation, the tunnel will get spun up and torn down between each test run.  This is *very* taxing as the tunnel takes between 10-20 seconds to spin up and 5-10 to close.  A better solution is to keep the tunnel running constantly in another thread.
+
+**Manually*
+
+The easiest way to achieve that is to download the sauce-connect.jar file, add it into your app directory and then run it in another console tab.  SauceLabs has put together an easy tutorial on how to downlaod and run [here](https://saucelabs.com/docs/connect "sauce-connect")
+
+**Progammatically**
+
+Or, you could create a SauceConnect class that deals with downloading, starting, and stopping the tunnel which you could then use as part of bootstrap script so you can run your tests with one command.
+
+Inside of your `support` directory create a new `.rb` file called `sauce_connect.rb`. Add the following:
+
+```
+class SauceConnect
+
+  def self.configuration_file
+    File.join(File.dirname(__FILE__),"..","..","config", "ondemand.yml")
+  end
+
+  def self.configuration
+    YAML.load_file(configuration_file)
+  end
+
+  def self.username
+    configuration['username']
+  end
+
+  def self.access_key
+    configuration['access_key']
+  end
+
+  def self.archive_file
+    "Sauce-Connect-latest.zip"
+  end
+
+  def self.application_file
+    "Sauce-Connect.jar"
+  end
+
+  def self.connect_url
+    "http://saucelabs.com/downloads/#{archive_file}"
+  end
+
+  def self.download
+    `wget #{connect_url}`
+
+    unless File.exists?(archive_file)
+      raise error_message("could not download the Sauce Archive File",
+        "Attempted to download it from:\n  #{connect_url}")
+    end
+  end  
+  
+  def self.is_open?
+    !%x{ps | grep Sauce-Connect.jar | head -n 1}.include?("grep")
+  end
+
+
+  def self.extract
+    `unzip -o #{archive_file} #{application_file}`
+
+    unless File.exists?(application_file)
+      raise error_message("could not extract the Sauce Application File",
+        "Attempted to extract:\n    File: #{application_file}\n    From: #{archive_file}")
+    end
+
+  end
+
+  def self.start
+    if is_open?
+      puts "Tunnel is already open!"
+      exit
+    end
+    puts "Starting the Sauce Connect Tunnel"
+    pid = fork { exec("java -jar #{application_file} #{username} #{access_key} &> #{log_file}") }
+    Process.detach(pid)
+    sleep 2
+    connected = false
+    until connected
+      if File.read(log_file).include?("Connected! You may start your tests")  && is_open?
+        puts ""
+        puts "Connected! Tests are ready to run"
+        connected = true
+      else
+        sleep 2
+        print "."
+      end
+    end
+  end
+
+  def self.end
+    unless is_open?
+      puts "Tunnel is already closed!"
+      exit
+    end
+    puts "Gracefully shutting down the Sauce Tunnel"
+    exec("touch #{log_file}") unless File.exists? log_file #there are cases where a bad connect will not create the log file
+    system "kill -TERM $(ps | grep Sauce-Connect.jar | head -n 1 | awk '{print $1}')"
+    terminated = false
+    until terminated
+      if File.read(log_file).include?("Finished /")  && !is_open?
+        puts "\nSuccess!"
+        system("rm #{log_file}") 
+        terminated = true
+      else
+        sleep 2
+        system "kill -TERM $(ps | grep Sauce-Connect.jar | head -n 1 | awk '{print $1}')"
+        print "."
+      end
+    end
+  end      
+
+  def self.log_file
+    File.join(Dir.pwd, "log", "sauce_connect.log")
+  end
+
+  def self.cleanup
+    `rm #{archive_file}`
+  end
+
+  def self.error_message(error,info)
+    %{
+====================================================
+ ! ERROR - #{error}
+
+  #{info}
+
+   Please visit Sauce Labs!
+====================================================}
+  end
+
+end
+```
+
+This is a lot of code.  But, what it gives us access to 5 class methods.
+```
+SauceConnect.download
+SauceConnect.extract
+SauceConnect.cleanup
+SauceConnect.start
+SauceConnect.end
+```
+* `Download, Extract, Cleanup` will download the latest stable version from SauceLabs and install in our app's directory, unzip it, and then delete the original zip file so we only have the .jar file.
+* `Start` will start the tunnel in its own process so you don't need to open a second tab on the command line
+* `End` will find the process's pid and kill it (SIGTERM)
+
+Now we can wrap this functionality into their own `rake` tasks.  Add the following to your `sauce.rake` file.
+
+```
+  desc "Installs (overwriting) the necessary Sauce Connect Library"
+  task :install do
+
+    SauceConnect.download
+    SauceConnect.extract
+    SauceConnect.cleanup
+
+    puts "Successfully downloaded and extracted the SauceConnect Library"
+  end
+  
+  desc "Opens a Sauce Connect Tunnel"
+  task :open_tunnel do
+    SauceConnect.start
+  end
+
+  desc "Gracefully closes the Sauce Connect Tunnel"
+  task :close_tunnel do
+    SauceConnect.end
+  end
+```
+
+Woot Woot! We now have 3 helpful `rake` tasks for dealing with SauceConnect Tunnel.
+
+
 
 
 
