@@ -16,7 +16,7 @@ rails new super_test
 
 Install the necessary gems 
 ```
-gem cucumber-rails, :require => false
+gem 'cucumber-rails', :require => false
 ```
 Bundle
 
