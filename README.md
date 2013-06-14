@@ -298,7 +298,7 @@ Add some more config to our `env.rb` file
 Capybara.server_port = 80
 
 And this inside our Sauce.config block
-  c[:start_tunnel] = false
+  c[:start_tunnel] = true
 ```
 
 Our final `env.rb` file should look like this:
