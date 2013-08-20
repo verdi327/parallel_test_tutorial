@@ -36,7 +36,7 @@ Using the default profile...
 ```
 Great we now have `Cucumber` wired up correctly.
 
-##Phase 2: Adding Capyabra
+##Phase 2: Adding Capybara
 Capybara is a great tool that gives us a nice DSL for interacting with DOM elements i.e finding, selecting, clicking, and filling in forms...you know, all things your users are going to be doing.  Luckily for us, the `cucumber-rails` gem that we installed already has `Capybara` built in.  First, let's get some configuration out of the way.
 
 Open the `env.rb` file inside of `support` directory.  Add the following to the top of the file.
