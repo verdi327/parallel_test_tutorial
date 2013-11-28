@@ -1,8 +1,8 @@
-#Parallel Cross Browser Testing       
+#Parallel Cross Browser Testing
 ###Using Saucelabs, Cucumber, and Capybara
 
 ##Goal
-In this tutorial we will create a rails app from scratch that contain `cucumber .feature` files that we can run in parallel against 6 different browsers.  Cross browser testing is super important because each browser has its own implementation on how it handles rendering the `DOM` and as developers we want to ensure that our product works with all the browsers our customers are using.  
+In this tutorial we will create a rails app from scratch that contain `cucumber .feature` files that we can run in parallel against 6 different browsers.  Cross browser testing is super important because each browser has its own implementation on how it handles rendering the `DOM` and as developers we want to ensure that our product works with all the browsers our customers are using.
 
 The type of tests we will be covering today are called integration tests.  These tests are fully headed, meaning they simulate the actions of real users by automating the actions of the browser.  Since many sites today use `javascript` we'll be using the `Selenium Webdriver` to handle these interactions.  Because many large scale apps today follow a `Service Oriented Architecture` we'll be building a rails app the solely houses `cucumber .feature` files and their corresponding `step definitions` which we can then run remotely against other applications.
 
@@ -14,7 +14,7 @@ Create a new rails app called super_test
 rails new super_test
 ```
 
-Install the necessary gems 
+Install the necessary gems
 ```
 gem 'cucumber-rails', :require => false
 ```
@@ -37,7 +37,16 @@ Using the default profile...
 Great we now have `Cucumber` wired up correctly.
 
 ##Phase 2: Adding Capybara
-Capybara is a great tool that gives us a nice DSL for interacting with DOM elements i.e finding, selecting, clicking, and filling in forms...you know, all things your users are going to be doing.  Luckily for us, the `cucumber-rails` gem that we installed already has `Capybara` built in.  First, let's get some configuration out of the way.
+Capybara is a great tool that gives us a nice DSL for interacting with DOM elements i.e finding, selecting, clicking, and filling in forms...you know, all things your users are going to be doing.  The `cucumber-rails` gem that we installed already has `Capybara` built in, but the version it uses by default does not work with Sauce. So, first, add the necessary gem
+```
+gem 'capybara', '~>2.1.0'
+```
+And update the bundle
+```
+bundle update capybara
+```
+
+Next, let's get some configuration out of the way.
 
 Open the `env.rb` file inside of `support` directory.  Add the following to the top of the file.
 
@@ -155,7 +164,7 @@ end
 We now need to add our creditentials so SauceLabs knows who we are.  Inside of our `config` directory create a new `.yml` file called `ondemand.yml`.  The sauce gem is looking for this file.  Add the following:
 
 ```
-access_key: YOUR_ACCESS_KEY_HERE  
+access_key: YOUR_ACCESS_KEY_HERE
 username: YOUR_USERNAME_HERE
 ```
 
@@ -263,7 +272,7 @@ namespace :sauce do
   desc "Runs cucumber suite on Sauce OnDemand cross-browser"
   task :cucumber do
     browsers = YAML.load_file(File.join("config", "sauce_browsers.yml"))
-    browsers['list'].each do |browser|  
+    browsers['list'].each do |browser|
       system("thor set:browser --values=platform:'#{browser[0]}' browser:'#{browser[1]}' version:'#{browser[2]}'")
       pid = fork { exec("cucumber") }
       Process.detach(pid)
@@ -399,8 +408,8 @@ class SauceConnect
       raise error_message("could not download the Sauce Archive File",
         "Attempted to download it from:\n  #{connect_url}")
     end
-  end  
-  
+  end
+
   def self.is_open?
     !%x{ps | grep Sauce-Connect.jar | head -n 1}.include?("grep")
   end
@@ -450,7 +459,7 @@ class SauceConnect
     until terminated
       if File.read(log_file).include?("Finished /")  && !is_open?
         puts "\nSuccess!"
-        system("rm #{log_file}") 
+        system("rm #{log_file}")
         terminated = true
       else
         sleep 2
@@ -458,7 +467,7 @@ class SauceConnect
         print "."
       end
     end
-  end      
+  end
 
   def self.log_file
     File.join(Dir.pwd, "log", "sauce_connect.log")
@@ -506,7 +515,7 @@ Now we can wrap each of these methods into its own `rake` task.  Add the followi
 
     puts "Successfully downloaded and extracted the SauceConnect Library"
   end
-  
+
   desc "Opens a Sauce Connect Tunnel"
   task :open_tunnel do
     SauceConnect.start
